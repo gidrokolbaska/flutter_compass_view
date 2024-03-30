@@ -1,24 +1,17 @@
 import 'dart:math';
-
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 
 class CompassView extends StatefulWidget {
   const CompassView({
     Key? key,
-    required this.bearing,
-    required this.heading,
+    required this.windAngle,
+    required this.child,
     this.foregroundColor = Colors.white,
-    this.bearingColor = Colors.red,
   }) : super(key: key);
 
-  final double? bearing;
-
-  final double heading;
-
+  final double windAngle;
   final Color foregroundColor;
-
-  final Color bearingColor;
+  final Widget child;
 
   @override
   _CompassViewState createState() => _CompassViewState();
@@ -27,35 +20,18 @@ class CompassView extends StatefulWidget {
 class _CompassViewState extends State<CompassView> {
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1.0,
+    return FittedBox(
       child: Stack(
-        fit: StackFit.expand,
+        alignment: Alignment.center,
         children: [
-          // Rose Painter
           CustomPaint(
+            size: const Size(150, 150),
             painter: _CompassViewPainter(
-              heading: widget.heading,
+              windAngle: widget.windAngle,
               foregroundColor: widget.foregroundColor,
             ),
           ),
-
-          // Bearing Indicator
-          if (widget.bearing != null)
-            Padding(
-              padding: const EdgeInsets.all(35.0),
-              child: Transform.rotate(
-                angle: (widget.bearing! - widget.heading).toRadians(),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Icon(
-                    CupertinoIcons.arrowtriangle_up_fill,
-                    color: widget.bearingColor,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
+          widget.child,
         ],
       ),
     );
@@ -64,50 +40,62 @@ class _CompassViewState extends State<CompassView> {
 
 class _CompassViewPainter extends CustomPainter {
   _CompassViewPainter({
-    required this.heading,
+    required this.windAngle,
     required this.foregroundColor,
-    this.majorTickCount = 12,
-    this.minorTickCount = 180,
-    this.cardinalities = const {0: 'N', 90: 'E', 180: 'S', 270: 'W'},
   });
 
-  final double heading;
+  final double windAngle;
 
   final Color foregroundColor;
 
-  final int majorTickCount;
+  final int middleTickCount = 12;
+  final int majorTickCount = 4;
+  final int minorTickCount = 180;
 
-  final int minorTickCount;
-
-  final CardinalityMap cardinalities;
+  final CardinalityMap cardinalities = const {
+    0: 'С',
+    90: 'В',
+    180: 'Ю',
+    270: 'З'
+  };
 
   late final bearingIndicatorPaint = Paint()
-    ..style = PaintingStyle.stroke
+    ..style = PaintingStyle.fill
     ..color = foregroundColor
-    ..strokeWidth = 4.0
-    ..blendMode = BlendMode.difference;
+    ..strokeWidth = 1
+    ..blendMode = BlendMode.srcIn;
 
-  late final majorScalePaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..color = foregroundColor
-    ..strokeWidth = 2.0;
-
-  late final minorScalePaint = Paint()
+  late final middleScalePaint = Paint()
     ..style = PaintingStyle.stroke
     ..color = foregroundColor.withOpacity(0.7)
     ..strokeWidth = 1.0;
 
-  late final majorScaleStyle = TextStyle(
-    color: foregroundColor,
-    fontSize: 15,
-  );
+  late final minorScalePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = foregroundColor.withOpacity(0.4)
+    ..strokeWidth = 1.0;
+  late final majorScalePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = foregroundColor.withOpacity(1)
+    ..strokeWidth = 1.5;
 
   late final cardinalityStyle = TextStyle(
     color: foregroundColor,
-    fontSize: 32,
+    fontSize: 15,
+    fontWeight: FontWeight.bold,
   );
+  late final middleCirclePaint = Paint()
+    ..style = PaintingStyle.fill
+    ..blendMode = BlendMode.src
+    ..color = foregroundColor.withOpacity(0.2);
+
+  late final arrowPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = Colors.white
+    ..strokeWidth = 2;
 
   late final _majorTicks = _layoutScale(majorTickCount);
+  late final _middleTicks = _layoutScale(middleTickCount);
   late final _minorTicks = _layoutScale(minorTickCount);
 
   @override
@@ -116,39 +104,18 @@ class _CompassViewPainter extends CustomPainter {
     const origin = Offset.zero;
     final center = size.center(origin);
     final radius = size.width / 2;
-
-    const tickPadding = 55.0;
-    const tickLength = 20.0;
-
-    // paint major scale
-    for (final angle in _majorTicks) {
-      final tickStart = Offset.fromDirection(
-        _correctedAngle(angle).toRadians(),
-        radius - tickPadding,
-      );
-
-      final tickEnd = Offset.fromDirection(
-        _correctedAngle(angle).toRadians(),
-        radius - tickPadding - tickLength,
-      );
-
-      canvas.drawLine(
-        center + tickStart,
-        center + tickEnd,
-        majorScalePaint,
-      );
-    }
+    const tickLength = 10.0;
 
     // paint minor scale
     for (final angle in _minorTicks) {
       final tickStart = Offset.fromDirection(
         _correctedAngle(angle).toRadians(),
-        radius - tickPadding,
+        radius,
       );
 
       final tickEnd = Offset.fromDirection(
         _correctedAngle(angle).toRadians(),
-        radius - tickPadding - tickLength,
+        radius - tickLength,
       );
 
       canvas.drawLine(
@@ -158,46 +125,51 @@ class _CompassViewPainter extends CustomPainter {
       );
     }
 
-    // paint bearing indicator
-    final tickStart = Offset.fromDirection(
-      -90.toRadians(),
-      radius,
-    );
-
-    final tickEnd = Offset.fromDirection(
-      -90.toRadians(),
-      radius - tickPadding - tickLength,
-    );
-
-    canvas.drawLine(
-      center + tickStart,
-      center + tickEnd,
-      bearingIndicatorPaint,
-    );
-
-    // paint major scale text
-    for (final angle in _majorTicks) {
-      const majorScaleTextPadding = 20.0;
-
-      final textPainter = TextSpan(
-        text: angle.toStringAsFixed(0),
-        style: majorScaleStyle,
-      ).toPainter()
-        ..layout();
-
-      final layoutOffset = Offset.fromDirection(
+    // paint middle scale
+    for (final angle in _middleTicks) {
+      final tickStart = Offset.fromDirection(
         _correctedAngle(angle).toRadians(),
-        radius - majorScaleTextPadding,
+        radius,
       );
 
-      final offset = center + layoutOffset - textPainter.center;
-      textPainter.paint(canvas, offset);
+      final tickEnd = Offset.fromDirection(
+        _correctedAngle(angle).toRadians(),
+        radius - tickLength,
+      );
+
+      canvas.drawLine(
+        center + tickStart,
+        center + tickEnd,
+        middleScalePaint,
+      );
     }
+    // paint major scale
+    for (final angle in _majorTicks) {
+      final tickStart = Offset.fromDirection(
+        _correctedAngle(angle).toRadians(),
+        radius,
+      );
 
-    // paint cardinality text
+      final tickEnd = Offset.fromDirection(
+        _correctedAngle(angle).toRadians(),
+        radius - tickLength,
+      );
+
+      canvas.drawLine(
+        center + tickStart,
+        center + tickEnd,
+        majorScalePaint,
+      );
+    }
+    //paint bearing
+    var path2 = Path();
+    path2.moveTo(size.width / 2, 0);
+    path2.lineTo(size.width / 2 - 7, tickLength);
+    path2.lineTo(size.width / 2 + 7, tickLength);
+    path2.close();
+    canvas.drawPath(path2, bearingIndicatorPaint);
+// paint cardinality text
     for (final cardinality in cardinalities.entries) {
-      const majorScaleTextPadding = 100.0;
-
       final angle = cardinality.key.toDouble();
       final text = cardinality.value;
 
@@ -209,27 +181,72 @@ class _CompassViewPainter extends CustomPainter {
 
       final layoutOffset = Offset.fromDirection(
         _correctedAngle(angle).toRadians(),
-        radius - majorScaleTextPadding,
+        radius - 30,
       );
 
       final offset = center + layoutOffset - textPainter.center;
       textPainter.paint(canvas, offset);
     }
+//draw speed direction arrow
+    final Offset p1 = center -
+        Offset.fromDirection(
+          _correctedAngle(windAngle).toRadians(),
+          radius - tickLength,
+        );
+    final Offset p2 = center +
+        Offset.fromDirection(
+          _correctedAngle(windAngle).toRadians(),
+          radius,
+        );
+
+    final dX = p2.dx - p1.dx;
+    final dY = p2.dy - p1.dy;
+    final angle = atan2(dY, dX);
+    const arrowSize = tickLength;
+    const arrowAngle = 25 * pi / 180;
+    canvas.drawLine(p1, p2, arrowPaint);
+    canvas.drawCircle(
+        center -
+            Offset.fromDirection(
+              _correctedAngle(windAngle).toRadians(),
+              radius - tickLength / 2,
+            ),
+        5,
+        arrowPaint);
+    final path = Path();
+
+    path.moveTo(p2.dx - arrowSize * cos(angle - arrowAngle),
+        p2.dy - arrowSize * sin(angle - arrowAngle));
+    path.lineTo(p2.dx, p2.dy);
+    path.lineTo(p2.dx - arrowSize * cos(angle + arrowAngle),
+        p2.dy - arrowSize * sin(angle + arrowAngle));
+    path.close();
+    canvas.drawPath(
+      path,
+      Paint()..color = Colors.white,
+    );
+
+    canvas.drawCircle(
+      center,
+      radius - 50,
+      middleCirclePaint,
+    );
   }
 
   @override
   bool shouldRepaint(_CompassViewPainter oldDelegate) =>
-      oldDelegate.heading != heading ||
+      oldDelegate.windAngle != windAngle ||
       oldDelegate.foregroundColor != foregroundColor ||
-      oldDelegate.majorTickCount != majorTickCount ||
+      oldDelegate.middleTickCount != middleTickCount ||
       oldDelegate.minorTickCount != minorTickCount;
 
   List<double> _layoutScale(int ticks) {
     final scale = 360 / ticks;
+
     return List.generate(ticks, (i) => i * scale);
   }
 
-  double _correctedAngle(double angle) => angle - heading - 90;
+  double _correctedAngle(double angle) => angle - 90;
 }
 
 typedef CardinalityMap = Map<num, String>;

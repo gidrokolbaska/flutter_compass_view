@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 
 import 'compass_view.dart';
 
@@ -34,35 +33,20 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   double? _bearing;
 
-  void _setBearing(double heading) {
-    setState(() {
-      _bearing = heading;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<CompassEvent>(
-      stream: FlutterCompass.events,
-      builder: (context, snapshot) {
-        final heading = snapshot.data?.heading ?? 0;
-
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: Align(
-            alignment: const Alignment(0, -0.2),
-            child: CompassView(
-              bearing: _bearing,
-              heading: heading,
-            ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: SizedBox(
+          height: 150,
+          child: CompassView(
+            windAngle: 0,
+            child: Text('3'),
+            foregroundColor: Colors.blue,
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _setBearing(heading),
-            tooltip: 'Set Bearing',
-            child: const Icon(Icons.arrow_upward),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
