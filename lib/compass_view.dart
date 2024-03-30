@@ -1,5 +1,8 @@
 import 'dart:math';
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class CompassView extends StatefulWidget {
   const CompassView({
@@ -31,7 +34,20 @@ class _CompassViewState extends State<CompassView> {
               foregroundColor: widget.foregroundColor,
             ),
           ),
-          widget.child,
+          ClipOval(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: Container(
+                alignment: Alignment.center,
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.3)),
+                child: widget.child,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -84,10 +100,6 @@ class _CompassViewPainter extends CustomPainter {
     fontSize: 15,
     fontWeight: FontWeight.bold,
   );
-  late final middleCirclePaint = Paint()
-    ..style = PaintingStyle.fill
-    ..blendMode = BlendMode.src
-    ..color = foregroundColor.withOpacity(0.2);
 
   late final arrowPaint = Paint()
     ..style = PaintingStyle.stroke
@@ -181,7 +193,7 @@ class _CompassViewPainter extends CustomPainter {
 
       final layoutOffset = Offset.fromDirection(
         _correctedAngle(angle).toRadians(),
-        radius - 30,
+        radius - 20,
       );
 
       final offset = center + layoutOffset - textPainter.center;
@@ -224,12 +236,6 @@ class _CompassViewPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()..color = Colors.white,
-    );
-
-    canvas.drawCircle(
-      center,
-      radius - 50,
-      middleCirclePaint,
     );
   }
 

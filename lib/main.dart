@@ -36,14 +36,19 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.purple,
       body: Center(
         child: SizedBox(
           height: 150,
           child: CompassView(
             windAngle: 0,
-            child: Text('3'),
-            foregroundColor: Colors.blue,
+            child: Text(
+              '3',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
+            foregroundColor: Colors.white,
           ),
         ),
       ),
