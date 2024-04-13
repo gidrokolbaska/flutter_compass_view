@@ -200,12 +200,12 @@ class _CompassViewPainter extends CustomPainter {
       textPainter.paint(canvas, offset);
     }
 //draw speed direction arrow
-    final Offset p1 = center -
+    final Offset p1 = center +
         Offset.fromDirection(
           _correctedAngle(windAngle).toRadians(),
           radius - tickLength,
         );
-    final Offset p2 = center +
+    final Offset p2 = center -
         Offset.fromDirection(
           _correctedAngle(windAngle).toRadians(),
           radius,
@@ -218,7 +218,7 @@ class _CompassViewPainter extends CustomPainter {
     const arrowAngle = 25 * pi / 180;
     canvas.drawLine(p1, p2, arrowPaint);
     canvas.drawCircle(
-        center -
+        center +
             Offset.fromDirection(
               _correctedAngle(windAngle).toRadians(),
               radius - tickLength / 2,

@@ -41,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: SizedBox(
           height: 150,
           child: CompassView(
-            windAngle: 0,
+            windAngle: 190,
             child: Text(
               '3',
               style: TextStyle(
